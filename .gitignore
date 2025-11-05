@@ -1,0 +1,42 @@
+# ----------------------------------------
+# Aldec (Active-HDL / Riviera-PRO) Ignore
+# ----------------------------------------
+
+# Workspace and simulation cache
+/work
+/worklib/
+/simlib/
+/temp/
+/waveform/
+/compile/
+/dataset/
+/libcfg/
+/backup/
+*.libcfg
+*.syn
+
+# Simulation outputs
+*.asdb
+*.vcd
+*.wlf
+*.do
+*.log
+*.err
+*.rpt
+*.dat
+*.bak
+
+# Lock or temporary files
+*.lock
+*.tmp
+*.lck
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# IDE settings
+*.ini
+*.cfg
+*.idb
+*.trc
