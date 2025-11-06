@@ -9,3 +9,5 @@ mode=none
 order=1
 [Expand]
 encyptions=1
+[Settings]
+Active=encyptions
