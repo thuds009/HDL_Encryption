@@ -1,1 +1,4 @@
 .\src\goldModel.vhd
+.\src\gen_next_round_key.vhd
+.\src\shift_rows.vhd
+.\src\subbyte_table.vhd
