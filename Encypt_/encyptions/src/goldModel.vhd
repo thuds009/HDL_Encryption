@@ -37,6 +37,16 @@ signal key_count	:std_logic_vector(1 downto 0);
 signal iv_count 	:std_logic_vector(1 downto 0);
 signal data_count	:std_logic_vector(1 downto 0);
 
+----internal signals for FSM-----
+type state_type is (IDLE, LOAD, COMPUTE, OUTPUT);
+signal state : state_type := IDLE;
+signal next_state : state_type := IDLE;
+
+----internal signals for output------
+signal result_reg std_logic_vector(127 downto 0) := (others => 0);
+signal output_counter std_logic_vector(1 downto 0) := (others => 0);
+
+
 begin
 
 -----key load--------
@@ -156,6 +166,109 @@ begin
     	end if;
 	end process;
 	
+------FSM STATE REGISTER------
+
+process(clock, reset)
+begin
+	if reset = '1' then
+		state <= IDLE;
+		
+	elsif rising_edge(clock) then
+		state <= next_state;
+	end if;
+	end process;
+	
+-------FSM Next State Logic------
+process(state, key_count, iv_count, data_count, key_load, IV_load, db_load)
+being
+
+case state is
+	
+	---------------------------
+	when IDLE =>
+	--move to LOAD when any other load starts
+	if key_load = '1' or IV_load = '1' or db_load = '1' then 
+		next_state <= LOAD;
+	else
+		next_state <= IDLE;
+	end if;
+	
+	---------------------------
+	when LOAD => 
+	-- Wait until all counters have wrapped back to "00"
+	if key_counter = "00" and iv_counter = "00" and data_count = "00" then
+		next_state <= COMPUTE;
+	else
+		next_state <= LOAD;
+	end if;	 
+	
+	---------------------------
+	when COMPUTE =>
+	--After AES comp is done (1 gold model cycle)
+	next_state <= OUTPUT;
+	
+	---------------------------
+	when OUTPUT =>
+	--After four sections out output have been transmitted 
+	next_state <= IDLE;
+	
+	end case;
+	end process;
+
+--------- Output ----------
+process(clock, reset)
+begin
+	if reset = '1' then
+		
+		dataout		<= (others => '0');
+		output_count<= "00";
+		Done		<= '0';
+		
+	elsif rising_edge(clock) then
+		
+		-- Only output when in OUTPUT state
+		if state = OUTPUT then
+			
+			Done <= '0';
+			
+			case output_count is 
+				when "00" =>
+				dataOut <= result_reg(127 downto 96);
+				
+				when "01" =>
+				dataOut <= result_reg(95 downto 64);
+				
+				when "10" =>
+				dataOut <= result_reg(63 downto 32);
+				
+				when "11" => 
+				dataOut <= result_reg(31 downto 0);
+				
+			end case;
+			
+			--increment counter
+			if output_count = "11" then 
+				output_count <= "00";
+				Done <= '1';
+			else
+				output_count +1;
+			end if;
+			
+			else 
+			-- Not in output state -> reset done and counter
+			Done <= '0';
+			output_counter <= "00"
+			end if;
+			
+		end if;
+	end process;
+		
+
+	
+	
+
+	
+
 	
 
 
