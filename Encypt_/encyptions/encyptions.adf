@@ -67,8 +67,12 @@ extension11=asdb;awc;asdbc;asdbe
 /gen_next_round_key.vhd=-1
 /shift_rows.vhd=-1
 /subbyte_table.vhd=-1
+/..\..\..\..\..\..\..\Fall2025\ECE341\Encyption_Project\HDL_Encryption\Encypt_\encyptions\src\goldModelTest1.asdb=-1
+/..\..\..\..\..\..\..\Fall2025\ECE341\Encyption_Project\HDL_Encryption\Encypt_\encyptions\src\goldModelTest1.awc=-1
 [Files.Data]
 .\src\goldModel.vhd=VHDL Source Code
 .\src\gen_next_round_key.vhd=VHDL Source Code
 .\src\shift_rows.vhd=VHDL Source Code
 .\src\subbyte_table.vhd=VHDL Source Code
+.\..\..\..\..\..\..\Fall2025\ECE341\Encyption_Project\HDL_Encryption\Encypt_\encyptions\src\goldModelTest1.asdb=Accelerated Waveform File
+.\..\..\..\..\..\..\Fall2025\ECE341\Encyption_Project\HDL_Encryption\Encypt_\encyptions\src\goldModelTest1.awc=Accelerated Waveform Configuration

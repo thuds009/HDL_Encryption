@@ -26,30 +26,30 @@ entity goldModel is
 	);
 end entity goldModel;
 
-architecture Behavioral of goldModel is	 
+
+  architecture Behavioral of goldModel is	 
 
 ---------internal signals-----------------
-signal key_reg	:std_logic_vector(127 downto 0);
-signal iv_reg	:std_logic_vector(127 downto 0);
-signal data_reg	:std_logic_vector(127 downto 0);
+signal key_reg    : std_logic_vector(127 downto 0);
+signal iv_reg     : std_logic_vector(127 downto 0);
+signal data_reg   : std_logic_vector(127 downto 0);
 
-signal key_count	:std_logic_vector(1 downto 0);
-signal iv_count 	:std_logic_vector(1 downto 0);
-signal data_count	:std_logic_vector(1 downto 0);
+signal key_count  : std_logic_vector(1 downto 0);
+signal iv_count   : std_logic_vector(1 downto 0);
+signal data_count : std_logic_vector(1 downto 0);
 
 ----internal signals for FSM-----
 type state_type is (IDLE, LOAD, COMPUTE, OUTPUT);
-signal state : state_type := IDLE;
+signal state      : state_type := IDLE;
 signal next_state : state_type := IDLE;
 
 ----internal signals for output------
-signal result_reg std_logic_vector(127 downto 0) := (others => 0);
-signal output_counter std_logic_vector(1 downto 0) := (others => 0);
-
+signal result_reg     : std_logic_vector(127 downto 0) := (others => '0');
+signal output_counter : std_logic_vector(1 downto 0)  := (others => '0');
 
 begin
+-----key load-------- 
 
------key load--------
 process(clock, reset)  
 begin
 	if reset = '1' then 
@@ -73,7 +73,9 @@ begin
 				key_reg(63 downto 32) <= dataIn;
 					
 				when "11" =>
-				key_reg(31 downto 0) <= dataIn;
+				key_reg(31 downto 0) <= dataIn;	
+				
+				when others => null;
 					
 			end case;
 			
@@ -81,7 +83,7 @@ begin
 			if key_count = "11" then 
 				key_count <= "00";	--wrap if fully loaded
 			else
-				key_count <= key_count + 1;
+				key_count <= std_logic_vector(unsigned(key_count) + 1);
 			end if;
 			
 			end if;	
@@ -94,7 +96,7 @@ process(clock, reset)
 begin	
 	if reset = '1' then
 		iv_reg		<= (others => '0');
-		iv_clock 	<= (others => '0');
+		iv_count 	<= (others => '0');
 		
 	elsif rising_edge(clock) then
 		
@@ -114,13 +116,15 @@ begin
 				when "11" =>
 				iv_reg(31 downto 0) <= dataIn;
 				
+				when others => null;
+				
 			end case;
 			
 			--increment counter
-			if iv_counter = "11" then
-				iv_counter <= "00"; --wrap if fully loaded
+			if iv_count = "11" then
+				iv_count <= "00"; --wrap if fully loaded
 			else
-				iv_counter <= counter +1;
+				iv_count <= std_logic_vector(unsigned(iv_count) + 1);
 			end if;
 			
 			end if;
@@ -132,8 +136,8 @@ begin
 process(clock, reset)
 begin
 	if reset = '1' then 
-		data_reg 	<= (others =>0);
-		data_clcok	<= (others =>0);
+		data_reg 	<= (others => '0');
+		data_count	<= (others => '0');
 	
 	elsif rising_edge(clock) then 
 	
@@ -152,6 +156,8 @@ begin
 
                 when "11" =>
                 data_reg(31 downto 0) <= dataIn;
+				
+				when others => null;
 
             end case;
 
@@ -159,7 +165,7 @@ begin
             if data_count = "11" then
                 data_count <= "00";  -- wrap when block fully loaded
             else
-                data_count <= data_count + 1;
+				data_count <= std_logic_vector(unsigned(data_count) + 1);
             end if;
 
         	end if;
@@ -180,7 +186,7 @@ begin
 	
 -------FSM Next State Logic------
 process(state, key_count, iv_count, data_count, key_load, IV_load, db_load)
-being
+begin
 
 case state is
 	
@@ -196,7 +202,7 @@ case state is
 	---------------------------
 	when LOAD => 
 	-- Wait until all counters have wrapped back to "00"
-	if key_counter = "00" and iv_counter = "00" and data_count = "00" then
+	if key_count = "00" and iv_count = "00" and data_count = "00" then
 		next_state <= COMPUTE;
 	else
 		next_state <= LOAD;
@@ -220,9 +226,9 @@ process(clock, reset)
 begin
 	if reset = '1' then
 		
-		dataout		<= (others => '0');
-		output_count<= "00";
-		Done		<= '0';
+		dataout			<= (others => '0');
+		output_counter 	<= "00";
+		Done			<= '0';
 		
 	elsif rising_edge(clock) then
 		
@@ -231,7 +237,7 @@ begin
 			
 			Done <= '0';
 			
-			case output_count is 
+			case output_counter is 
 				when "00" =>
 				dataOut <= result_reg(127 downto 96);
 				
@@ -244,20 +250,20 @@ begin
 				when "11" => 
 				dataOut <= result_reg(31 downto 0);
 				
+				when others => null;
 			end case;
 			
 			--increment counter
-			if output_count = "11" then 
-				output_count <= "00";
+			if output_counter = "11" then 
+				output_counter <= "00";
 				Done <= '1';
 			else
-				output_count +1;
+				output_counter <= std_logic_vector(unsigned(output_counter) + 1);
 			end if;
-			
-			else 
+		else
 			-- Not in output state -> reset done and counter
 			Done <= '0';
-			output_counter <= "00"
+			output_counter <= "00";
 			end if;
 			
 		end if;
@@ -281,7 +287,7 @@ begin
 
     end if;
 end process;
-	
+end architecture behavioral;	
 	
 
 	
