@@ -263,7 +263,24 @@ begin
 		end if;
 	end process;
 		
+		----- AES COMPUTE PLACEHOLDER --------
+process(clock, reset)
+begin
+    if reset = '1' then
+        result_reg <= (others => '0');
 
+    elsif rising_edge(clock) then
+
+        if state = COMPUTE then
+            -- TEMPORARY PLACEHOLDER
+            -- Replace this with real AES later
+            result_reg <= data_reg XOR key_reg;  -- simple XOR for testing
+
+            -- (Optional: pulse DONE here if you are skipping OUTPUT state)
+        end if;
+
+    end if;
+end process;
 	
 	
 
