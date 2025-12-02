@@ -26,8 +26,7 @@ entity goldModel is
 	);
 end entity goldModel;
 
-
-  architecture Behavioral of goldModel is	 
+architecture Behavioral of goldModel is	 
 
 ---------internal signals-----------------
 signal key_reg    : std_logic_vector(127 downto 0);
