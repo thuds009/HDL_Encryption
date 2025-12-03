@@ -22,7 +22,13 @@ entity goldModel is
 	dataOut		:out std_logic_vector(0 to 31);
 	
 	--Completion of operation
-	Done		:out std_logic
+	Done		:out std_logic;
+	
+	 -- DEBUG PORTS
+        state_debug : out std_logic_vector(1 downto 0);
+        kcnt_debug  : out std_logic_vector(1 downto 0);
+        icnt_debug  : out std_logic_vector(1 downto 0);
+        dcnt_debug  : out std_logic_vector(1 downto 0)
 	);
 end entity goldModel;
 
@@ -52,6 +58,13 @@ signal sub_out   : std_logic_vector(127 downto 0);
 signal shift_out : std_logic_vector(127 downto 0);
 signal mix_out   : std_logic_vector(127 downto 0);
 
+--test
+signal dbg_state  : std_logic_vector(1 downto 0);
+signal dbg_kcnt   : std_logic_vector(1 downto 0);
+signal dbg_icnt   : std_logic_vector(1 downto 0);
+signal dbg_dcnt   : std_logic_vector(1 downto 0);
+
+
 component subBytes is 
    port(state_in : in std_logic_vector(127 downto 0);
         state_out: out std_logic_vector(127 downto 0));
@@ -74,129 +87,106 @@ component addRoundKey is
 end component;
 
 begin
------key load-------- 
-
-process(clock, reset)  
-begin
-	if reset = '1' then 
-		
-		key_reg 	<= (others => '0');
-		key_count 	<= (others => '0');
-		
-	elsif rising_edge(clock) then
-		
-		if key_load = '1' then
-			--store dataIn into correct 32 bit slice
-			case key_count is 
-				
-				when "00" =>
-				key_reg(127 downto 96) <= dataIn;
-				
-				when "01" =>
-				key_reg(95 downto 64) <= dataIn;
-				
-				when "10" => 
-				key_reg(63 downto 32) <= dataIn;
-					
-				when "11" =>
-				key_reg(31 downto 0) <= dataIn;	
-				
-				when others => null;
-					
-			end case;
-			
-			--increment counter
-			if key_count = "11" then 
-				key_count <= "00";	--wrap if fully loaded
-			else
-				key_count <= std_logic_vector(unsigned(key_count) + 1);
-			end if;
-			
-			end if;	
-		end if;
-	end process;
-	
-------Initial Value Load--------
-
-process(clock, reset)
-begin	
-	if reset = '1' then
-		iv_reg		<= (others => '0');
-		iv_count 	<= (others => '0');
-		
-	elsif rising_edge(clock) then
-		
-		if IV_load = '1' then 
-			--store dataIn into correct 32 bit slice
-			case iv_count is 
-				
-				when "00" =>
-				iv_reg(127 downto 96) <= dataIn;
-				
-				when "01" =>
-				iv_reg(95 downto 64) <= dataIn;
-				
-				when "10" => 
-				iv_reg(63 downto 32) <= dataIn;
-				
-				when "11" =>
-				iv_reg(31 downto 0) <= dataIn;
-				
-				when others => null;
-				
-			end case;
-			
-			--increment counter
-			if iv_count = "11" then
-				iv_count <= "00"; --wrap if fully loaded
-			else
-				iv_count <= std_logic_vector(unsigned(iv_count) + 1);
-			end if;
-			
-			end if;
-		end if;
-	end process;	
-				
-------Data Block Load-----
-
+----- key load -----
 process(clock, reset)
 begin
-	if reset = '1' then 
-		data_reg 	<= (others => '0');
-		data_count	<= (others => '0');
-	
-	elsif rising_edge(clock) then 
-	
-		if db_load = '1' then
-            -- store dataIn into correct 32-bit slice
-            case data_count is
+    if reset = '1' then
+        key_reg   <= (others => '0');
+        key_count <= "00";
 
-                when "00" =>
-                data_reg(127 downto 96) <= dataIn;
+    elsif rising_edge(clock) then
 
-                when "01" =>
-                 data_reg(95 downto 64) <= dataIn;
-
-                when "10" =>
-                data_reg(63 downto 32) <= dataIn;
-
-                when "11" =>
-                data_reg(31 downto 0) <= dataIn;
-				
-				when others => null;
-
+        if key_load = '1' then
+            -- store into correct slice
+            case key_count is
+                when "00" => key_reg(127 downto 96) <= dataIn;
+                when "01" => key_reg(95 downto 64) <= dataIn;
+                when "10" => key_reg(63 downto 32) <= dataIn;
+                when "11" => key_reg(31 downto 0) <= dataIn;
+                when others => null;
             end case;
 
             -- increment counter
-            if data_count = "11" then
-                data_count <= "00";  -- wrap when block fully loaded
+            if key_count = "11" then
+                key_count <= "00";
             else
-				data_count <= std_logic_vector(unsigned(data_count) + 1);
+                key_count <= std_logic_vector(unsigned(key_count) + 1);
             end if;
 
-        	end if;
-    	end if;
-	end process;
+        else
+            key_count <= "00";
+        end if;
+
+    end if;
+end process;
+	
+----- IV load -----
+process(clock, reset)
+begin
+    if reset = '1' then
+        iv_reg   <= (others => '0');
+        iv_count <= "00";
+
+    elsif rising_edge(clock) then
+
+        -- CBC FEEDBACK UPDATE (after last output)
+        if (state = OUTPUT and CBC_mode = '1' and output_counter = "11") then
+            iv_reg <= result_reg;
+            iv_count <= "00"; -- ensure clean for next IV
+
+        elsif IV_load = '1' then
+            -- normal IV loading
+            case iv_count is
+                when "00" => iv_reg(127 downto 96) <= dataIn;
+                when "01" => iv_reg(95 downto 64) <= dataIn;
+                when "10" => iv_reg(63 downto 32) <= dataIn;
+                when "11" => iv_reg(31 downto 0)  <= dataIn;
+                when others => null;
+            end case;
+
+            if iv_count = "11" then
+                iv_count <= "00";
+            else
+                iv_count <= std_logic_vector(unsigned(iv_count) + 1);
+            end if;
+
+        else
+            iv_count <= "00";
+        end if;
+
+    end if;
+end process;	
+				
+----- Data block load -----
+process(clock, reset)
+begin
+    if reset = '1' then
+        data_reg   <= (others => '0');
+        data_count <= "00";
+
+    elsif rising_edge(clock) then
+
+        if db_load = '1' then
+            case data_count is
+                when "00" => data_reg(127 downto 96) <= dataIn;
+                when "01" => data_reg(95 downto 64)  <= dataIn;
+                when "10" => data_reg(63 downto 32)  <= dataIn;
+                when "11" => data_reg(31 downto 0)   <= dataIn;
+                when others => null;
+            end case;
+
+            if data_count = "11" then
+                data_count <= "00";
+            else
+                data_count <= std_logic_vector(unsigned(data_count) + 1);
+            end if;
+
+        else
+            data_count <= "00";
+        end if;
+
+    end if;
+end process;
 	
 ------FSM STATE REGISTER------
 
@@ -227,12 +217,13 @@ case state is
 	
 	---------------------------
 	when LOAD =>
-    -- when loading is finished (all load signals low), go to COMPUTE
-    if key_load = '0' and IV_load = '0' and db_load = '0' then
+    if key_load='0' and IV_load='0' and db_load='0'
+       and key_count="00" and iv_count="00" and data_count="00" then
         next_state <= COMPUTE;
     else
         next_state <= LOAD;
     end if;
+
 	
 	---------------------------
 	when COMPUTE =>
@@ -241,11 +232,20 @@ case state is
 	
 	---------------------------
 	when OUTPUT =>
-	--After four sections out output have been transmitted 
-	next_state <= IDLE;
+    if output_counter = "11" then
+        next_state <= IDLE;
+    else
+        next_state <= OUTPUT;
+    end if;
 	
 	end case;
 	end process;
+
+	process(state)
+begin
+    report "STATE CHANGE: " & integer'image(state_type'pos(state));
+end process;	
+	
 
 --------- Output ----------
 process(clock, reset)
@@ -294,7 +294,7 @@ begin
 			
 		end if;
 	end process;
-		
+
 		----- AES COMPUTE PLACEHOLDER --------
 --process(clock, reset)
 --begin
@@ -327,7 +327,18 @@ U_mixColumns : mixColumn
     port map( shifted_state => shift_out, mixed_state => mix_out);
 
 U_addRoundKey : addRoundKey
-port map( state_in => mix_out, round_key => key_reg, state_out => result_reg );
+port map( state_in => mix_out, round_key => key_reg, state_out => result_reg );	
+
+-- DEBUG SIGNAL OUTPUTS
+state_debug <= 
+    "00" when state = IDLE else
+    "01" when state = LOAD else
+    "10" when state = COMPUTE else
+    "11";  -- OUTPUT
+
+kcnt_debug <= key_count;
+icnt_debug <= iv_count;
+dcnt_debug <= data_count;
 
 end architecture behavioral;	
 	

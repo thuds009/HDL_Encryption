@@ -26,6 +26,12 @@ architecture tb of goldModel_tb is
 
     signal Done_beh    : std_logic;
     signal Done_df     : std_logic;
+	
+	--test
+	signal state_dbg_b : std_logic_vector(1 downto 0);
+	signal kcnt_dbg_b  : std_logic_vector(1 downto 0);
+	signal icnt_dbg_b  : std_logic_vector(1 downto 0);
+	signal dcnt_dbg_b  : std_logic_vector(1 downto 0);
 
 begin
 
@@ -48,7 +54,13 @@ begin
         CBC_mode => CBC_mode,
         dataIn   => dataIn,
         dataOut  => dataOut_beh,
-        Done     => Done_beh
+        Done     => Done_beh,  
+        
+		--test
+		state_debug => state_dbg_b,
+        kcnt_debug  => kcnt_dbg_b,
+        icnt_debug  => icnt_dbg_b,
+        dcnt_debug  => dcnt_dbg_b
     );
 	
 	--instantiate dataflow model
