@@ -1,0 +1,2 @@
+WARNING ELAB1_0026: "There is no default binding for component "rowShift". (Port "original_state" is not on the entity)." "C:/ODU/Fall 2025/ECE 341/Encyption_Project/HDL_Encryption/Encypt_/encyptions/src/goldModel.vhd" 323 0
+WARNING ELAB1_0026: "There is no default binding for component "mixColumn". (Port "shifted_state" is not on the entity)." "C:/ODU/Fall 2025/ECE 341/Encyption_Project/HDL_Encryption/Encypt_/encyptions/src/goldModel.vhd" 326 0

@@ -46,6 +46,33 @@ signal next_state : state_type := IDLE;
 signal result_reg     : std_logic_vector(127 downto 0) := (others => '0');
 signal output_counter : std_logic_vector(1 downto 0)  := (others => '0');
 
+--cbc signals
+signal cbc_in    : std_logic_vector(127 downto 0);
+signal sub_out   : std_logic_vector(127 downto 0);
+signal shift_out : std_logic_vector(127 downto 0);
+signal mix_out   : std_logic_vector(127 downto 0);
+
+component subBytes is 
+   port(state_in : in std_logic_vector(127 downto 0);
+        state_out: out std_logic_vector(127 downto 0));
+end component;
+
+component rowShift is
+    port(original_state : in std_logic_vector(127 downto 0);
+         shifted_state  : out std_logic_vector(127 downto 0));
+end component;
+
+component mixColumn is
+    port(shifted_state : in std_logic_vector(127 downto 0);
+         mixed_state   : out std_logic_vector(127 downto 0));
+end component;
+
+component addRoundKey is
+    port(state_in  : in std_logic_vector(127 downto 0);
+         round_key : in std_logic_vector(127 downto 0);
+         state_out : out std_logic_vector(127 downto 0));
+end component;
+
 begin
 -----key load-------- 
 
@@ -199,13 +226,13 @@ case state is
 	end if;
 	
 	---------------------------
-	when LOAD => 
-	-- Wait until all counters have wrapped back to "00"
-	if key_count = "00" and iv_count = "00" and data_count = "00" then
-		next_state <= COMPUTE;
-	else
-		next_state <= LOAD;
-	end if;	 
+	when LOAD =>
+    -- when loading is finished (all load signals low), go to COMPUTE
+    if key_load = '0' and IV_load = '0' and db_load = '0' then
+        next_state <= COMPUTE;
+    else
+        next_state <= LOAD;
+    end if;
 	
 	---------------------------
 	when COMPUTE =>
@@ -225,7 +252,7 @@ process(clock, reset)
 begin
 	if reset = '1' then
 		
-		dataout			<= (others => '0');
+		dataOut			<= (others => '0');
 		output_counter 	<= "00";
 		Done			<= '0';
 		
@@ -269,23 +296,39 @@ begin
 	end process;
 		
 		----- AES COMPUTE PLACEHOLDER --------
-process(clock, reset)
-begin
-    if reset = '1' then
-        result_reg <= (others => '0');
-
-    elsif rising_edge(clock) then
-
-        if state = COMPUTE then
+--process(clock, reset)
+--begin
+--   if reset = '1' then
+--        result_reg <= (others => '0');
+--
+--    elsif rising_edge(clock) then
+--
+--        if state = COMPUTE then
             -- TEMPORARY PLACEHOLDER
             -- Replace this with real AES later
-            result_reg <= data_reg XOR key_reg;  -- simple XOR for testing
+--           result_reg <= data_reg XOR key_reg;  -- simple XOR for testing
 
             -- (Optional: pulse DONE here if you are skipping OUTPUT state)
-        end if;
+--        end if;
 
-    end if;
-end process;
+--   end if;
+--end process;
+
+-- CBC input
+cbc_in <= data_reg xor iv_reg when CBC_mode='1' else data_reg;
+
+U_subbytes : subBytes
+    port map( state_in => cbc_in, state_out => sub_out );
+
+U_shiftRows : rowShift
+    port map( original_state => sub_out, shifted_state => shift_out);
+
+U_mixColumns : mixColumn
+    port map( shifted_state => shift_out, mixed_state => mix_out);
+
+U_addRoundKey : addRoundKey
+port map( state_in => mix_out, round_key => key_reg, state_out => result_reg );
+
 end architecture behavioral;	
 	
 

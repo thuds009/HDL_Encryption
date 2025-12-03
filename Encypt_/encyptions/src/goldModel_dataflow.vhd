@@ -94,6 +94,13 @@ begin
         state_out => sub_out
     );	
 	
+	--ShiftRows transformation
+	U_shiftRows : rowShift
+    port map(
+        original_key => sub_out,
+        shifted_key  => shift_out
+    );
+	
 	--mixColums transformation
 	U_mixColumns : mixColumn
   	port map(
@@ -225,13 +232,13 @@ case state is
 	end if;
 	
 	---------------------------
-	when LOAD => 
-	-- Wait until all counters have wrapped back to "00"
-	if key_count = "00" and iv_count = "00" and data_count = "00" then
-		next_state <= COMPUTE;
-	else
-		next_state <= LOAD;
-	end if;	 
+	when LOAD =>
+    -- when loading is finished (all load signals low), go to COMPUTE
+    if key_load = '0' and IV_load = '0' and db_load = '0' then
+        next_state <= COMPUTE;
+    else
+        next_state <= LOAD;
+    end if; 
 	
 	---------------------------
 	when COMPUTE =>
