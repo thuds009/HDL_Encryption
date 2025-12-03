@@ -207,7 +207,18 @@ else
    	data_reg(127 downto 32) & dataIn when 
 	(rising_edge(clock) and db_load='1' and data_count="11") 
 else
-	data_reg;
+	data_reg;	
+	
+data_count <= "00" when 
+	reset='1' 
+else
+  	"00" when
+	(rising_edge(clock) and db_load='1' and iv_count="11") 
+else
+   	std_logic_vector(unsigned(data_count)+1) when
+	(rising_edge(clock) and db_load='1') 
+else
+	data_count;
 	
 	
 ------FSM STATE REGISTER------
