@@ -71,12 +71,12 @@ component subBytes is
 end component;
 
 component rowShift is
-    port(original_state : in std_logic_vector(127 downto 0);
-         shifted_state  : out std_logic_vector(127 downto 0));
+    port(original_key : in std_logic_vector(127 downto 0);
+         shifted_key  : out std_logic_vector(127 downto 0));
 end component;
 
 component mixColumn is
-    port(shifted_state : in std_logic_vector(127 downto 0);
+    port(shifted_key : in std_logic_vector(127 downto 0);
          mixed_state   : out std_logic_vector(127 downto 0));
 end component;
 
@@ -321,10 +321,10 @@ U_subbytes : subBytes
     port map( state_in => cbc_in, state_out => sub_out );
 
 U_shiftRows : rowShift
-    port map( original_state => sub_out, shifted_state => shift_out);
+    port map( original_key => sub_out, shifted_key => shift_out);
 
 U_mixColumns : mixColumn
-    port map( shifted_state => shift_out, mixed_state => mix_out);
+    port map( shifted_key => shift_out, mixed_state => mix_out);
 
 U_addRoundKey : addRoundKey
 port map( state_in => mix_out, round_key => key_reg, state_out => result_reg );	
@@ -340,23 +340,4 @@ kcnt_debug <= key_count;
 icnt_debug <= iv_count;
 dcnt_debug <= data_count;
 
-end architecture behavioral;	
-	
-
-	
-
-	
-
-
-
-
-
-
-
-
-
-
-		
-			
-				
-				
+end architecture behavioral;

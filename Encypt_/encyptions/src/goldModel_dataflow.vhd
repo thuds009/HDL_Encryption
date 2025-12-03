@@ -2,7 +2,7 @@ Library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity goldModel is 
+entity goldModelDataflow is 
 	port (
 	clock 		:in std_logic;
 	reset		:in std_logic; 
@@ -30,9 +30,9 @@ kcnt_debug  : out std_logic_vector(1 downto 0);
 icnt_debug  : out std_logic_vector(1 downto 0);
 dcnt_debug  : out std_logic_vector(1 downto 0)
 	);
-end entity goldModel;
+end entity goldModelDataflow;
 
-architecture Dataflow of goldModel is 
+architecture Dataflow of goldModelDataflow is 
 
 --internal signals
 --AES datapath signals
