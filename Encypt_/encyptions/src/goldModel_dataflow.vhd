@@ -22,7 +22,13 @@ entity goldModelDataflow is
 	dataOut		:out std_logic_vector(0 to 31);
 	
 	--Completion of operation
-	Done		:out std_logic
+	Done		:out std_logic;
+	
+	--test
+	state_debug : out std_logic_vector(1 downto 0);
+kcnt_debug  : out std_logic_vector(1 downto 0);
+icnt_debug  : out std_logic_vector(1 downto 0);
+dcnt_debug  : out std_logic_vector(1 downto 0)
 	);
 end entity goldModelDataflow;
 
@@ -233,12 +239,13 @@ case state is
 	
 	---------------------------
 	when LOAD =>
-    -- when loading is finished (all load signals low), go to COMPUTE
-    if key_load = '0' and IV_load = '0' and db_load = '0' then
+    -- transition ONLY when all loads have dropped AND all counters wrapped
+    if key_load = '0' and IV_load = '0' and db_load = '0' and
+       key_count = "00" and iv_count = "00" and data_count = "00" then
         next_state <= COMPUTE;
     else
         next_state <= LOAD;
-    end if; 
+    end if;
 	
 	---------------------------
 	when COMPUTE =>
@@ -247,8 +254,11 @@ case state is
 	
 	---------------------------
 	when OUTPUT =>
-	--After four sections out output have been transmitted 
-	next_state <= IDLE;
+    if output_counter = "11" then
+        next_state <= IDLE;
+    else
+        next_state <= OUTPUT;
+    end if;
 	
 	end case;
 	end process;
@@ -272,5 +282,15 @@ else
 	(rising_edge(clock) and state = OUTPUT) 
 else
 	output_counter;  
-	
+
+	state_debug <= 
+    "00" when state = IDLE else
+    "01" when state = LOAD else
+    "10" when state = COMPUTE else
+    "11";  -- OUTPUT
+
+kcnt_debug <= key_count;
+icnt_debug <= iv_count;
+dcnt_debug <= data_count;
+
 end architecture;
