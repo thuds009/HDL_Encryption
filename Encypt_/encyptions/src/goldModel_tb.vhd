@@ -42,7 +42,7 @@ begin
 
 	--instantiate behavorial model
 	
-    U_BEHAV : entity work.goldModel(Behavioral)
+    U_BEHAV : entity work.goldModel
     port map(
         clock    => clock,
         reset    => reset,
@@ -65,7 +65,7 @@ begin
 	
 	--instantiate dataflow model
 	
-U_DATAFLOW : entity work.goldModel(Dataflow)
+U_DATAFLOW : entity work.goldModelDataflow
     port map(
         clock    => clock,
         reset    => reset,
